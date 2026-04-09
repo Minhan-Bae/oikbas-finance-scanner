@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oikbas-finance-scanner"
+version = "0.1.0"
+description = "Channel-based multi-source signal scanner for small-cap swing trading. Combines SEC EDGAR Form 4, Yahoo Finance, and Cowork-imported OpenInsider/Finviz data into a unified analyzer."
+requires-python = ">=3.10"
+authors = [{ name = "MinHanr", email = "miinh.anr@gmail.com" }]
+license = { text = "MIT" }
+dependencies = [
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "loguru>=0.7",
+    "rich>=13.0",
+]
+
+[project.scripts]
+oikbas-finance = "oikbas_finance.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+oikbas_finance = ["py.typed"]
