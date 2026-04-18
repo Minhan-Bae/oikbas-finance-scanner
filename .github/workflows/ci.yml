@@ -1,0 +1,37 @@
+# oikbas-finance-scanner CI — ruff + pytest.
+# oikbas-vault/weekly-insider-scan.yml이 main 브랜치의 scanner를 checkout해 사용하므로
+# 회귀가 들어가면 다음 주 월요일 07:00 KST 주간 스캔이 깨진다.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: finance-scanner-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml'
+
+      - name: Install package + dev deps
+        run: |
+          pip install -e .
+          pip install pytest ruff
+
+      - name: Ruff lint
+        run: ruff check src tests
+
+      - name: Pytest
+        run: pytest tests -v
