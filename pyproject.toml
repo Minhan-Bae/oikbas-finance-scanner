@@ -16,6 +16,9 @@ dependencies = [
     "rich>=13.0",
 ]
 
+[project.optional-dependencies]
+vision = ["google-genai>=0.3"]
+
 [project.scripts]
 oikbas-finance = "oikbas_finance.cli:main"
 

@@ -53,6 +53,22 @@ def _build_parser() -> argparse.ArgumentParser:
     channels_sub = p_channels.add_subparsers(dest="channels_cmd", required=True)
     channels_sub.add_parser("list", help="List registered channels")
 
+    # vision — Gemini Vision 보조 분석
+    p_vision = subparsers.add_parser(
+        "vision", help="Summarize a macro PDF or analyze a chart image via Gemini Vision"
+    )
+    vision_sub = p_vision.add_subparsers(dest="vision_cmd", required=True)
+
+    p_pdf = vision_sub.add_parser("pdf", help="Summarize a PDF report as Markdown")
+    p_pdf.add_argument("path", help="Path to PDF file")
+    p_pdf.add_argument("--focus", default=None, help="Optional framing (e.g. 'small-cap swing')")
+    p_pdf.add_argument("--model", default="gemini-2.5-flash")
+
+    p_chart = vision_sub.add_parser("chart", help="Structured analysis of a chart image")
+    p_chart.add_argument("path", help="Path to chart image (PNG/JPG)")
+    p_chart.add_argument("--context", default=None, help="Ticker/timeframe context")
+    p_chart.add_argument("--model", default="gemini-2.5-flash")
+
     return parser
 
 
@@ -72,8 +88,39 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "scan":
         return _run_scan(args)
 
+    if args.command == "vision":
+        return _run_vision(args)
+
     parser.print_help()
     return 0
+
+
+def _run_vision(args: argparse.Namespace) -> int:
+    from pathlib import Path
+
+    from oikbas_finance.vision import (
+        VisionError,
+        analyze_chart,
+        summarize_pdf,
+    )
+
+    path = Path(args.path)
+    if not path.exists():
+        print(f"[vision] file not found: {path}", file=sys.stderr)
+        return 2
+    try:
+        if args.vision_cmd == "pdf":
+            md = summarize_pdf(path, focus=args.focus, model=args.model)
+            print(md)
+            return 0
+        if args.vision_cmd == "chart":
+            result = analyze_chart(path, context=args.context, model=args.model)
+            print(json.dumps(result.raw, ensure_ascii=False, indent=2))
+            return 0
+    except VisionError as exc:
+        print(f"[vision] {exc}", file=sys.stderr)
+        return 1
+    return 2
 
 
 def _run_scan(args: argparse.Namespace) -> int:
