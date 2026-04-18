@@ -14,7 +14,16 @@ Schema (all keys optional, defaults below):
     cowork_import:
       base_dir: "~/cowork-export"
     output:
-      vault_finance_dir: "/mnt/c/Users/HAN/Documents/workspace/oikbas-vault/030_Areas/034_Finance"
+      vault_finance_dir: "<vault_root>/030_Areas/034_Finance"
+
+Vault path resolution (precedence, highest first):
+  1. config.yaml `output.vault_finance_dir`
+  2. `OIKBAS_VAULT_FINANCE_DIR` env var
+  3. Built-in default (WSL path; override via env or config for non-WSL hosts)
+
+The finance_dir subpath ('030_Areas/034_Finance') mirrors
+oikbas-vault/090_System/vault_config.json → folders.finance.path.
+Keep them in sync when restructuring the vault.
 """
 
 from __future__ import annotations
@@ -31,9 +40,22 @@ DEFAULT_CONFIG_PATH = Path(os.environ.get(
     str(Path.home() / ".config" / "oikbas-finance" / "config.yaml"),
 ))
 
+# Mirrors oikbas-vault/090_System/vault_config.json folders.finance.path.
+_VAULT_FINANCE_SUBPATH = "030_Areas/034_Finance"
+
+# WSL-style built-in. Non-WSL hosts should override via OIKBAS_VAULT_FINANCE_DIR
+# or config.yaml.
 _DEFAULT_VAULT_FINANCE_DIR = Path(
-    "/mnt/c/Users/HAN/Documents/workspace/oikbas-vault/030_Areas/034_Finance"
+    "/mnt/c/Users/HAN/Documents/workspace/oikbas-vault/" + _VAULT_FINANCE_SUBPATH
 )
+
+
+def _resolve_default_finance_dir() -> Path:
+    """Env var overrides built-in default."""
+    env_val = os.environ.get("OIKBAS_VAULT_FINANCE_DIR")
+    if env_val:
+        return Path(env_val).expanduser()
+    return _DEFAULT_VAULT_FINANCE_DIR
 
 
 @dataclass
@@ -60,7 +82,7 @@ class CoworkImportConfig:
 
 @dataclass
 class OutputConfig:
-    vault_finance_dir: Path = field(default_factory=lambda: _DEFAULT_VAULT_FINANCE_DIR)
+    vault_finance_dir: Path = field(default_factory=_resolve_default_finance_dir)
 
 
 @dataclass
@@ -94,7 +116,7 @@ def load_config(path: Path | str | None = None) -> Config:
         ),
         output=OutputConfig(
             vault_finance_dir=Path(
-                output_raw.get("vault_finance_dir", str(_DEFAULT_VAULT_FINANCE_DIR))
+                output_raw.get("vault_finance_dir", str(_resolve_default_finance_dir()))
             ).expanduser()
         ),
     )
