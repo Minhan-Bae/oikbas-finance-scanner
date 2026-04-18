@@ -19,11 +19,10 @@ the user can validate without copying anything.
 from __future__ import annotations
 
 import json
-import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 from oikbas_finance.channels import register
 from oikbas_finance.channels.base import Channel, CheckStatus, Signal
